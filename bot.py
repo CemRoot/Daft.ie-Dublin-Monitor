@@ -4,7 +4,7 @@ import logging
 import threading
 from flask import Flask
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 import requests
 import base64
 
@@ -136,7 +136,7 @@ def trigger_github_scan():
         "Accept": "application/vnd.github.v3+json"
     }
     data = {
-        "ref": "main"  # Always trigger main branch
+        "ref": os.environ.get("GITHUB_REF", "daft-monitor-setup-2684401370211648289")
     }
 
     try:
@@ -339,6 +339,18 @@ def cmd_fav(message):
             msg += f"⭐ [İlan {ad_id}]({url})\n"
         bot.send_message(message.chat.id, msg, parse_mode="Markdown", disable_web_page_preview=True)
 
+def setup_bot_commands():
+    bot.set_my_commands([
+        BotCommand("start", "Ana menü"),
+        BotCommand("scan", "Hemen tara"),
+        BotCommand("list", "Son ilanlar"),
+        BotCommand("setprice", "Fiyat aralığı"),
+        BotCommand("setlocation", "Bölge seç"),
+        BotCommand("toggle", "Bildirimleri aç/kapat"),
+        BotCommand("fav", "Favoriler"),
+        BotCommand("help", "Yardım"),
+    ])
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
@@ -348,8 +360,8 @@ if __name__ == "__main__":
         logger.error("TELEGRAM_TOKEN is not set.")
     else:
         logger.info("Starting bot and Flask server...")
-        # Sync initial state from Github on startup (to handle Render restarts)
         sync_state_from_github()
+        setup_bot_commands()
 
         flask_thread = threading.Thread(target=run_flask)
         flask_thread.daemon = True
