@@ -4,6 +4,7 @@ import logging
 import threading
 from flask import Flask
 import telebot
+from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 import requests
 import base64
@@ -431,6 +432,32 @@ def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
 
+class PollingExceptionHandler(telebot.ExceptionHandler):
+    def handle(self, exception):
+        if isinstance(exception, ApiTelegramException) and exception.error_code == 409:
+            logger.warning(
+                "Telegram 409 Conflict: another getUpdates client is active "
+                "(local bot.py, overlapping Render deploy, or getUpdates test). "
+                "Ensure only one bot instance is running; retrying..."
+            )
+        return False
+
+def start_bot_polling():
+    logger.info("Clearing webhook and pending updates before polling...")
+    bot.delete_webhook(drop_pending_updates=True)
+    bot.exception_handler = PollingExceptionHandler()
+    logger.info(
+        "Starting infinity polling (locations=%d, branch=%s)...",
+        len(LOCATION_OPTIONS),
+        os.environ.get("RENDER_GIT_BRANCH", "local"),
+    )
+    bot.infinity_polling(
+        skip_pending=True,
+        timeout=30,
+        long_polling_timeout=30,
+        logger_level=logging.WARNING,
+    )
+
 if __name__ == "__main__":
     if not TOKEN:
         logger.error("TELEGRAM_TOKEN is not set.")
@@ -443,4 +470,4 @@ if __name__ == "__main__":
         flask_thread.daemon = True
         flask_thread.start()
 
-        bot.infinity_polling()
+        start_bot_polling()
