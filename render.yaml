@@ -2,6 +2,7 @@ services:
   - type: web
     name: daft-monitor-bot
     env: python
+    branch: daft-monitor-setup-2684401370211648289
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python bot.py"
     envVars:

@@ -166,7 +166,11 @@ def trigger_github_scan():
 
 @app.route('/ping')
 def ping():
-    return "Pong", 200
+    commit = os.environ.get("RENDER_GIT_COMMIT", "local")
+    branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
+    locations_count = len(LOCATION_OPTIONS)
+    has_date_filter = True
+    return f"Pong | {branch}@{commit[:7]} | locations={locations_count} | date_filter={has_date_filter}", 200
 
 def get_main_menu_markup():
     markup = InlineKeyboardMarkup()
