@@ -4,7 +4,9 @@ import logging
 from curl_cffi import requests
 from telebot import TeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from locations import LOCATION_GEO_IDS, LOCATION_OPTIONS
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -16,30 +18,11 @@ REPO = os.environ.get("GITHUB_REPOSITORY")
 
 bot = TeleBot(TOKEN) if TOKEN else None
 
-# Daft v2 API uses geoFilter storedShapeIds instead of the legacy locations filter.
-LOCATION_GEO_IDS = {
-    "dublin-1-dublin": "65",
-    "dublin-2-dublin": "66",
-    "dublin-4-dublin": "68",
-    "dublin-6-dublin": "70",
-    "dublin-6w-dublin": "71",
-    "dublin-8-dublin": "73",
-}
-
-LOCATION_NAMES = {
-    "dublin-1-dublin": "Dublin 1",
-    "dublin-2-dublin": "Dublin 2",
-    "dublin-4-dublin": "Dublin 4",
-    "dublin-6-dublin": "Dublin 6",
-    "dublin-6w-dublin": "Dublin 6W",
-    "dublin-8-dublin": "Dublin 8",
-}
-
 def format_location_header(locations):
     loc_set = set(locations)
     if loc_set >= {"dublin-6-dublin", "dublin-6w-dublin"}:
         return " — Dublin 6/6W"
-    parts = [LOCATION_NAMES[loc] for loc in locations if loc in LOCATION_NAMES]
+    parts = [LOCATION_OPTIONS[loc] for loc in locations if loc in LOCATION_OPTIONS]
     return f" — {', '.join(parts)}" if parts else ""
 
 def load_json(filepath, default):
@@ -56,6 +39,18 @@ def save_json(filepath, data):
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
         logger.error(f"Error saving {filepath}: {e}")
+
+def build_first_publish_date_range(date_range_days):
+    if date_range_days is None:
+        return None
+    try:
+        days = int(date_range_days)
+    except (TypeError, ValueError):
+        return None
+    if days <= 0:
+        return None
+    since_ms = int((datetime.now() - timedelta(days=days)).timestamp() * 1000)
+    return {"name": "firstPublishDate", "from": str(since_ms), "to": ""}
 
 def get_daft_listings(state):
     url = "https://gateway.daft.ie/api/v2/ads/listings"
@@ -94,6 +89,10 @@ def get_daft_listings(state):
         },
         "paging": {"from": "0", "pagesize": "50"}
     }
+
+    date_range = build_first_publish_date_range(state.get("date_range_days"))
+    if date_range:
+        payload["ranges"].append(date_range)
 
     try:
         response = requests.post(url, headers=headers, json=payload, impersonate="chrome120", timeout=30)
@@ -210,7 +209,7 @@ def commit_files_to_github(files_to_commit):
 
 def main():
     logger.info("Starting Daft.ie scan...")
-    state = load_json("state.json", {"price_min": 1500, "price_max": 1800, "locations": ["dublin-6-dublin", "dublin-6w-dublin"], "auto_notify": True})
+    state = load_json("state.json", {"price_min": 1500, "price_max": 1800, "locations": ["dublin-6-dublin", "dublin-6w-dublin"], "auto_notify": True, "date_range_days": 30})
 
     # Download latest state from github just to be safe
     # But usually actions run with latest repo code anyway

@@ -8,6 +8,31 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 import requests
 import base64
 
+from locations import LOCATION_OPTIONS
+
+DATE_RANGE_OPTIONS = {
+    1: "Son 1 gün",
+    7: "Son 7 gün",
+    14: "Son 14 gün",
+    30: "Son 30 gün",
+}
+
+def format_date_range_label(date_range_days):
+    if date_range_days is None:
+        return "Tümü (filtre yok)"
+    return DATE_RANGE_OPTIONS.get(date_range_days, f"Son {date_range_days} gün")
+
+def get_date_range_markup(state):
+    current = state.get("date_range_days")
+    markup = InlineKeyboardMarkup()
+    for days, label in DATE_RANGE_OPTIONS.items():
+        status = "✅" if current == days else ""
+        markup.row(InlineKeyboardButton(f"{status} {label}".strip(), callback_data=f"date_{days}"))
+    all_status = "✅" if current is None else ""
+    markup.row(InlineKeyboardButton(f"{all_status} Tümü".strip(), callback_data="date_all"))
+    markup.row(InlineKeyboardButton("Bitti", callback_data="date_done"))
+    return markup
+
 # Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -20,15 +45,6 @@ REPO = os.environ.get("GITHUB_REPOSITORY") # Format: user/repo
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
-
-LOCATION_OPTIONS = {
-    "dublin-6-dublin": "Dublin 6",
-    "dublin-6w-dublin": "Dublin 6W",
-    "dublin-1-dublin": "Dublin 1",
-    "dublin-2-dublin": "Dublin 2",
-    "dublin-4-dublin": "Dublin 4",
-    "dublin-8-dublin": "Dublin 8"
-}
 
 def download_from_github(filename):
     if not GITHUB_TOKEN or not REPO:
@@ -70,7 +86,7 @@ def load_state():
             return json.load(f)
     except Exception as e:
         logger.error(f"Error loading state: {e}")
-        return {"price_min": 1500, "price_max": 1800, "locations": ["dublin-6-dublin", "dublin-6w-dublin"], "auto_notify": True, "favorites": []}
+        return {"price_min": 1500, "price_max": 1800, "locations": ["dublin-6-dublin", "dublin-6w-dublin"], "auto_notify": True, "favorites": [], "date_range_days": 30}
 
 def save_state(state):
     try:
@@ -157,6 +173,7 @@ def get_main_menu_markup():
     markup.row(InlineKeyboardButton("🔍 Hemen Tara", callback_data="cmd_scan"))
     markup.row(InlineKeyboardButton("📋 Son İlanlar", callback_data="cmd_list"), InlineKeyboardButton("⭐ Favoriler", callback_data="cmd_fav"))
     markup.row(InlineKeyboardButton("💶 Fiyat Ayarla", callback_data="cmd_setprice"), InlineKeyboardButton("📍 Bölge Ayarla", callback_data="cmd_setlocation"))
+    markup.row(InlineKeyboardButton("📅 Tarih Filtresi", callback_data="cmd_setdate"))
     markup.row(InlineKeyboardButton("🔔 Bildirimleri Aç/Kapat", callback_data="cmd_toggle"))
     return markup
 
@@ -173,6 +190,7 @@ def send_help(message):
 /list - Son görülen ilanları listeler
 /setprice - Fiyat aralığını değiştirir
 /setlocation - Bölgeleri ayarlar
+/setdate - Yayın tarihi filtresini ayarlar
 /toggle - Otomatik bildirimleri açıp kapatır
 /fav - Favori ilanlarınızı gösterir
 /help - Bu yardım mesajını gösterir
@@ -218,6 +236,16 @@ def callback_handler(call):
             markup.row(InlineKeyboardButton(f"{status} {loc_name}", callback_data=f"loc_{loc_id}"))
         markup.row(InlineKeyboardButton("Bitti", callback_data="loc_done"))
         bot.send_message(call.message.chat.id, "Takip edilecek bölgeleri seçin:", reply_markup=markup)
+    elif cmd == "setdate":
+        bot.answer_callback_query(call.id)
+        state = load_state()
+        label = format_date_range_label(state.get("date_range_days"))
+        bot.send_message(
+            call.message.chat.id,
+            f"Mevcut filtre: *{label}*\n\nYayın tarihi filtresini seçin:",
+            reply_markup=get_date_range_markup(state),
+            parse_mode="Markdown",
+        )
     elif cmd == "toggle":
         state = load_state()
         state["auto_notify"] = not state.get("auto_notify", True)
@@ -262,6 +290,38 @@ def handle_location_toggle(call):
     markup.row(InlineKeyboardButton("Bitti", callback_data="loc_done"))
 
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('date_'))
+def handle_date_range(call):
+    action = call.data.replace('date_', '')
+    if action == "done":
+        state = load_state()
+        label = format_date_range_label(state.get("date_range_days"))
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(
+            call.message.chat.id,
+            f"Yayın tarihi filtresi kaydedildi: *{label}*",
+            reply_markup=get_main_menu_markup(),
+            parse_mode="Markdown",
+        )
+        return
+
+    state = load_state()
+    if action == "all":
+        state["date_range_days"] = None
+    else:
+        state["date_range_days"] = int(action)
+    save_state(state)
+
+    label = format_date_range_label(state["date_range_days"])
+    bot.answer_callback_query(call.id, f"Filtre: {label}")
+    bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=f"Mevcut filtre: *{label}*\n\nYayın tarihi filtresini seçin:",
+        reply_markup=get_date_range_markup(state),
+        parse_mode="Markdown",
+    )
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('fav_'))
 def handle_favorite(call):
@@ -317,6 +377,17 @@ def cmd_setlocation(message):
     markup.row(InlineKeyboardButton("Bitti", callback_data="loc_done"))
     bot.send_message(message.chat.id, "Takip edilecek bölgeleri seçin:", reply_markup=markup)
 
+@bot.message_handler(commands=['setdate'])
+def cmd_setdate(message):
+    state = load_state()
+    label = format_date_range_label(state.get("date_range_days"))
+    bot.send_message(
+        message.chat.id,
+        f"Mevcut filtre: *{label}*\n\nYayın tarihi filtresini seçin:",
+        reply_markup=get_date_range_markup(state),
+        parse_mode="Markdown",
+    )
+
 @bot.message_handler(commands=['toggle'])
 def cmd_toggle(message):
     state = load_state()
@@ -346,6 +417,7 @@ def setup_bot_commands():
         BotCommand("list", "Son ilanlar"),
         BotCommand("setprice", "Fiyat aralığı"),
         BotCommand("setlocation", "Bölge seç"),
+        BotCommand("setdate", "Tarih filtresi"),
         BotCommand("toggle", "Bildirimleri aç/kapat"),
         BotCommand("fav", "Favoriler"),
         BotCommand("help", "Yardım"),
