@@ -6,6 +6,24 @@
     "url": "https://www.daft.ie/for-rent/25-leinster-road-d06kn36-rathgar-dublin-6/6510223"
   },
   {
+    "id": "6580122",
+    "title": "36 Westfield Road, Harold's Cross, Dublin 6w",
+    "price": "€1,200 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-36-westfield-road-harolds-cross-dublin-6w/6580122"
+  },
+  {
+    "id": "6578837",
+    "title": "Flat 1, 103 Grove Park, Rathmines, Dublin 6",
+    "price": "€1,425 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-flat-1-103-grove-park-rathmines-dublin-6/6578837"
+  },
+  {
+    "id": "6580356",
+    "title": " Spire View Lane, Dublin 6, Rathgar, Dublin 6",
+    "price": "€1,200 per month",
+    "url": "https://www.daft.ie/for-rent/house--spire-view-lane-dublin-6-rathgar-dublin-6/6580356"
+  },
+  {
     "id": "6580174",
     "title": "11-13 Sundrive Road, Kimmage, Dublin 12",
     "price": "€1,600 per month",
@@ -18,6 +36,12 @@
     "url": "https://www.daft.ie/for-rent/flat-apartment-11-13-sundrive-road-kimmage-dublin-12/6580098"
   },
   {
+    "id": "6580062",
+    "title": "Apartment 3, 24 Chelmsford Road, Ranelagh, Ranelagh, Dublin 6",
+    "price": "€1,350 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-apartment-3-24-chelmsford-road-ranelagh-ranelagh-dublin-6/6580062"
+  },
+  {
     "id": "6579913",
     "title": "Terenure Studio, Terenure, Dublin 6w",
     "price": "€1,750 per month",
@@ -28,6 +52,12 @@
     "title": "5 Dunville Avenue, Ranelagh, Dublin 6",
     "price": "€1,500 per month",
     "url": "https://www.daft.ie/for-rent/apartment-5-dunville-avenue-ranelagh-dublin-6/6575592"
+  },
+  {
+    "id": "6579751",
+    "title": "Belgrave Road, Rathmines , Dublin 6",
+    "price": "€1,395 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-belgrave-road-rathmines-dublin-6/6579751"
   },
   {
     "id": "6579735",
@@ -48,6 +78,30 @@
     "url": "https://www.daft.ie/for-rent/studio-apartment-rathmines-road-upper-rathmines-dublin-6/6579210"
   },
   {
+    "id": "6578487",
+    "title": "Flat 4, 21 Grove Park, Rathmines, Dublin 6",
+    "price": "€1,350 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-flat-4-21-grove-park-rathmines-dublin-6/6578487"
+  },
+  {
+    "id": "6578128",
+    "title": "Rathmines Road Upper, Dartry, Dublin 6",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/property-rathmines-road-upper-dartry-dublin-6/6578128"
+  },
+  {
+    "id": "6577257",
+    "title": "Flat 13, Eastpark Lodge, Rathmines, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-flat-13-eastpark-lodge-rathmines-dublin-6/6577257"
+  },
+  {
+    "id": "6576646",
+    "title": " Rathmines Road Upper, Dartry, Dublin 6",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/property--rathmines-road-upper-dartry-dublin-6/6576646"
+  },
+  {
     "id": "6576516",
     "title": "Grove Park, Rathmines, Dublin 6",
     "price": "€1,595 per month",
@@ -60,51 +114,9 @@
     "url": "https://www.daft.ie/for-rent/apartment-flat-4-4-sallymount-avenue-ranelagh-ranelagh-dublin-3/6575960"
   },
   {
-    "id": "6574496",
-    "title": "68 Cowper Road, Dublin 6, Rathmines, Dublin 6",
-    "price": "€1,550 per month",
-    "url": "https://www.daft.ie/for-rent/flat-68-cowper-road-dublin-6-rathmines-dublin-6/6574496"
-  },
-  {
-    "id": "6568837",
-    "title": "Flat 6, 65 Garville Avenue Upper, Rathgar, Dublin 6",
-    "price": "€1,750 per month",
-    "url": "https://www.daft.ie/for-rent/flat-flat-6-65-garville-avenue-upper-rathgar-co-dublin/6568837"
-  },
-  {
-    "id": "6566582",
-    "title": "24 Leinster Square, Dublin 6, Rathgar, Co. Dublin",
-    "price": "€1,700 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-24-leinster-square-dublin-6-rathgar-co-dublin/6566582"
-  },
-  {
-    "id": "6567885",
-    "title": "Boyne Court, Harold's Cross, Co. Dublin",
-    "price": "€1,800 per month",
-    "url": "https://www.daft.ie/for-rent/apartment-boyne-court-harolds-cross-co-dublin/6567885"
-  },
-  {
-    "id": "6567222",
-    "title": "51 Moyne Road, Ranelagh, Dublin 6",
-    "price": "€1,700 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-51-moyne-road-dublin-6-ranelagh-co-dublin/6567222"
-  },
-  {
-    "id": "6564172",
-    "title": "Rathgar Road, Rathgar, Co. Dublin",
-    "price": "€1,600 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-rathgar-road-rathgar-co-dublin/6564172"
-  },
-  {
-    "id": "6551690",
-    "title": "Kenilworth Park, Harold’s Cross, Dublin 6w, Harold's Cross, Dublin 6W",
-    "price": "€400 per week",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-kenilworth-park-harold-s-cross-dublin-6w-harolds-cross-dublin-6w/6551690"
-  },
-  {
-    "id": "6546415",
-    "title": "Leinster Road West, Rathmines, Dublin 6",
-    "price": "€1,700 per month",
-    "url": "https://www.daft.ie/for-rent/flat-leinster-road-west-rathmines-dublin-6/6546415"
+    "id": "6575906",
+    "title": "Flat 7, 86 Ranelagh Road, Ranelagh, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-flat-7-86-ranelagh-road-ranelagh-dublin-6/6575906"
   }
 ]
