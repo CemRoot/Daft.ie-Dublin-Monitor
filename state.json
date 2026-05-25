@@ -1,0 +1,10 @@
+{
+  "price_min": 1500,
+  "price_max": 1800,
+  "locations": [
+    "dublin-6-dublin",
+    "dublin-6w-dublin"
+  ],
+  "auto_notify": true,
+  "favorites": []
+}

@@ -1,0 +1,4 @@
+pyTelegramBotAPI==4.14.0
+flask==3.0.0
+curl_cffi==0.7.3
+requests==2.31.0
