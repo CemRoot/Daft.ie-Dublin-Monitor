@@ -1,11 +1,5 @@
 [
   {
-    "id": "6510223",
-    "title": "25 Leinster Rd, D06 KN36, Rathmines, Co. Dublin",
-    "price": "From €1,700 per month",
-    "url": "https://www.daft.ie/for-rent/25-leinster-road-d06kn36-rathgar-dublin-6/6510223"
-  },
-  {
     "id": "6580122",
     "title": "36 Westfield Road, Harold's Cross, Dublin 6w",
     "price": "€1,200 per month",
@@ -118,5 +112,11 @@
     "title": "Flat 7, 86 Ranelagh Road, Ranelagh, Dublin 6",
     "price": "€1,450 per month",
     "url": "https://www.daft.ie/for-rent/studio-apartment-flat-7-86-ranelagh-road-ranelagh-dublin-6/6575906"
+  },
+  {
+    "id": "6574496",
+    "title": "68 Cowper Road, Dublin 6, Rathmines, Dublin 6",
+    "price": "€1,550 per month",
+    "url": "https://www.daft.ie/for-rent/flat-68-cowper-road-dublin-6-rathmines-dublin-6/6574496"
   }
 ]
