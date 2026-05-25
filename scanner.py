@@ -16,6 +16,32 @@ REPO = os.environ.get("GITHUB_REPOSITORY")
 
 bot = TeleBot(TOKEN) if TOKEN else None
 
+# Daft v2 API uses geoFilter storedShapeIds instead of the legacy locations filter.
+LOCATION_GEO_IDS = {
+    "dublin-1-dublin": "65",
+    "dublin-2-dublin": "66",
+    "dublin-4-dublin": "68",
+    "dublin-6-dublin": "70",
+    "dublin-6w-dublin": "71",
+    "dublin-8-dublin": "73",
+}
+
+LOCATION_NAMES = {
+    "dublin-1-dublin": "Dublin 1",
+    "dublin-2-dublin": "Dublin 2",
+    "dublin-4-dublin": "Dublin 4",
+    "dublin-6-dublin": "Dublin 6",
+    "dublin-6w-dublin": "Dublin 6W",
+    "dublin-8-dublin": "Dublin 8",
+}
+
+def format_location_header(locations):
+    loc_set = set(locations)
+    if loc_set >= {"dublin-6-dublin", "dublin-6w-dublin"}:
+        return " — Dublin 6/6W"
+    parts = [LOCATION_NAMES[loc] for loc in locations if loc in LOCATION_NAMES]
+    return f" — {', '.join(parts)}" if parts else ""
+
 def load_json(filepath, default):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -32,11 +58,12 @@ def save_json(filepath, data):
         logger.error(f"Error saving {filepath}: {e}")
 
 def get_daft_listings(state):
-    url = "https://gateway.daft.ie/old/v1/listings"
+    url = "https://gateway.daft.ie/api/v2/ads/listings"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
         "Content-Type": "application/json",
-        "Brand": "daft",
+        "brand": "daft",
+        "platform": "web",
         "Origin": "https://www.daft.ie",
         "Referer": "https://www.daft.ie/",
         "Accept": "application/json",
@@ -47,21 +74,29 @@ def get_daft_listings(state):
     price_min = str(state.get("price_min", 1500))
     price_max = str(state.get("price_max", 1800))
 
+    shape_ids = [LOCATION_GEO_IDS[loc] for loc in locations if loc in LOCATION_GEO_IDS]
+    if not shape_ids:
+        logger.error(f"No geo IDs found for locations: {locations}")
+        return []
+
     payload = {
         "section": "residential-to-rent",
         "filters": [
             {"name": "adState", "values": ["published"]},
-            {"name": "locations", "values": locations}
         ],
         "andFilters": [],
         "ranges": [
             {"name": "rentalPrice", "from": price_min, "to": price_max}
         ],
+        "geoFilter": {
+            "storedShapeIds": shape_ids,
+            "geoSearchType": "STORED_SHAPES",
+        },
         "paging": {"from": "0", "pagesize": "50"}
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, impersonate="chrome124", timeout=30)
+        response = requests.post(url, headers=headers, json=payload, impersonate="chrome120", timeout=30)
         response.raise_for_status()
         data = response.json()
         return data.get("listings", [])
@@ -69,33 +104,31 @@ def get_daft_listings(state):
         logger.error(f"Error fetching from Daft API: {e}")
         return []
 
-def format_listing_message(listing):
+def format_listing_message(listing, locations=None):
     title = listing.get("title", "Bilinmeyen Başlık")
     price = listing.get("price", "Bilinmeyen Fiyat")
     daft_url = "https://www.daft.ie" + listing.get("seoFriendlyPath", "")
 
-    # Extract details
     property_type = listing.get("propertyType", "Bilinmeyen Tip")
-    beds = listing.get("numBedrooms", "Bilinmeyen Oda")
-    baths = listing.get("numBathrooms", "Bilinmeyen Banyo")
+    beds = listing.get("numBedrooms", property_type)
 
-    # Format date
     published = listing.get("publishDate", "")
     if published:
         try:
             pub_date = datetime.fromtimestamp(published / 1000)
             date_str = pub_date.strftime("%d %b %Y, %H:%M")
-        except:
+        except Exception:
             date_str = str(published)
     else:
         date_str = "Bilinmiyor"
 
-    msg = f"🏠 *YENİ İLAN* \n"
+    location_suffix = format_location_header(locations or [])
+    msg = f"🏠 *YENİ İLAN{location_suffix}*\n"
     msg += f"━━━━━━━━━━━━━━━━━━━━\n"
     msg += f"📍 {title}\n"
     msg += f"💶 {price}\n"
     msg += f"🏢 {property_type}\n"
-    msg += f"🛏 {beds} Yatak | 🚿 {baths} Banyo\n"
+    msg += f"🛏 {beds}\n"
     msg += f"📅 Yayın: {date_str}\n\n"
     msg += f"[🔗 Daft.ie'de Gör]({daft_url})"
 
@@ -109,12 +142,12 @@ def extract_recent_data(listing):
         "url": "https://www.daft.ie" + listing.get("seoFriendlyPath", "")
     }
 
-def send_telegram_notification(listing, ad_id):
+def send_telegram_notification(listing, ad_id, locations=None):
     if not bot or not CHAT_ID:
         logger.warning("Telegram bot token or chat ID not set.")
         return
 
-    msg = format_listing_message(listing)
+    msg = format_listing_message(listing, locations)
 
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("⭐ Favori Ekle/Çıkar", callback_data=f"fav_{ad_id}"))
@@ -216,7 +249,7 @@ def main():
 
         if ad_id not in seen_ids:
             logger.info(f"New listing found: {ad_id} - {listing.get('title')}")
-            send_telegram_notification(listing, ad_id)
+            send_telegram_notification(listing, ad_id, state.get("locations", []))
             seen_ids.append(ad_id)
             new_listings_found = True
 
