@@ -7,5 +7,5 @@
   ],
   "auto_notify": true,
   "favorites": [],
-  "date_range_days": null
+  "date_range_days": 30
 }
