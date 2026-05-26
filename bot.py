@@ -165,13 +165,25 @@ def trigger_github_scan():
     except Exception as e:
         return False, f"Hata oluştu: {e}"
 
+@app.route('/')
+def root():
+    return ping()
+
 @app.route('/ping')
 def ping():
     commit = os.environ.get("RENDER_GIT_COMMIT", "local")
     branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
     locations_count = len(LOCATION_OPTIONS)
-    has_date_filter = True
-    return f"Pong | {branch}@{commit[:7]} | locations={locations_count} | date_filter={has_date_filter}", 200
+    bot_user = "unknown"
+    if TOKEN:
+        try:
+            bot_user = f"@{bot.get_me().username}"
+        except Exception as e:
+            logger.warning("Could not fetch bot username for /ping: %s", e)
+    return (
+        f"Pong | bot={bot_user} | {branch}@{commit[:7]} | "
+        f"locations={locations_count} | date_filter=True"
+    ), 200
 
 def get_main_menu_markup():
     markup = InlineKeyboardMarkup()
@@ -184,7 +196,20 @@ def get_main_menu_markup():
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.send_message(message.chat.id, "🏠 *Daft.ie Monitor Bot'a Hoş Geldiniz!*\n\nAşağıdaki menüden işlemlerinizi seçebilirsiniz.", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
+    text = (
+        "🏠 <b>Daft.ie Monitor Bot'a Hoş Geldiniz!</b>\n\n"
+        "Aşağıdaki menüden işlemlerinizi seçebilirsiniz."
+    )
+    try:
+        bot.send_message(
+            message.chat.id,
+            text,
+            reply_markup=get_main_menu_markup(),
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.exception("Failed to send /start reply to chat %s: %s", message.chat.id, e)
+        bot.send_message(message.chat.id, text, reply_markup=get_main_menu_markup())
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
@@ -440,11 +465,15 @@ class PollingExceptionHandler(telebot.ExceptionHandler):
                 "(local bot.py, overlapping Render deploy, or getUpdates test). "
                 "Ensure only one bot instance is running; retrying..."
             )
+            return True
+        logger.exception("Unhandled bot exception during polling: %s", exception)
         return False
 
 def start_bot_polling():
-    logger.info("Clearing webhook and pending updates before polling...")
-    bot.delete_webhook(drop_pending_updates=True)
+    me = bot.get_me()
+    logger.info("Bot identity: @%s (id=%s)", me.username, me.id)
+    logger.info("Clearing webhook before polling (keeping pending updates)...")
+    bot.delete_webhook(drop_pending_updates=False)
     bot.exception_handler = PollingExceptionHandler()
     logger.info(
         "Starting infinity polling (locations=%d, branch=%s)...",
@@ -452,9 +481,10 @@ def start_bot_polling():
         os.environ.get("RENDER_GIT_BRANCH", "local"),
     )
     bot.infinity_polling(
-        skip_pending=True,
+        skip_pending=False,
         timeout=30,
         long_polling_timeout=30,
+        allowed_updates=["message", "callback_query"],
         logger_level=logging.WARNING,
     )
 
