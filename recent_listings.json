@@ -18,22 +18,34 @@
     "url": "https://www.daft.ie/for-rent/apartment-13a-kimmage-road-lower-harolds-cross-dublin-6w/6577051"
   },
   {
+    "id": "6581313",
+    "title": "Mount Alton, Harold's Cross, Dublin 6w",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-mount-alton-harolds-cross-dublin-6w/6581313"
+  },
+  {
+    "id": "6580868",
+    "title": "20 Chelmsford Road, Dublin 6, Ranelagh, Co. Dublin",
+    "price": "€1,800 per month",
+    "url": "https://www.daft.ie/for-rent/apartment-20-chelmsford-road-ranelagh-dublin-6/6580868"
+  },
+  {
+    "id": "6581291",
+    "title": "Flat 10, 6 Grosvenor Place, Rathmines, Dublin 6",
+    "price": "€1,750 per month",
+    "url": "https://www.daft.ie/for-rent/apartment-flat-10-6-grosvenor-place-rathmines-dublin-6/6581291"
+  },
+  {
+    "id": "6581180",
+    "title": "Grove Park, Rathmines, Dublin 6",
+    "price": "€1,550 per month",
+    "url": "https://www.daft.ie/for-rent/studio-apartment-grove-park-rathmines-dublin-6/6581180"
+  },
+  {
     "id": "6580356",
     "title": " Spire View Lane, Dublin 6, Rathgar, Dublin 6",
     "price": "€1,200 per month",
     "url": "https://www.daft.ie/for-rent/house--spire-view-lane-dublin-6-rathgar-dublin-6/6580356"
-  },
-  {
-    "id": "6580174",
-    "title": "11-13 Sundrive Road, Kimmage, Dublin 12",
-    "price": "€1,600 per month",
-    "url": "https://www.daft.ie/for-rent/flat-11-13-sundrive-road-kimmage-dublin-12/6580174"
-  },
-  {
-    "id": "6580098",
-    "title": "Apartment, 11-13 Sundrive Road, Kimmage, Dublin 12",
-    "price": "€1,500 per month",
-    "url": "https://www.daft.ie/for-rent/flat-apartment-11-13-sundrive-road-kimmage-dublin-12/6580098"
   },
   {
     "id": "6580062",
@@ -96,12 +108,6 @@
     "url": "https://www.daft.ie/for-rent/property--rathmines-road-upper-dartry-dublin-6/6576646"
   },
   {
-    "id": "6576516",
-    "title": "Grove Park, Rathmines, Dublin 6",
-    "price": "€1,595 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-grove-park-rathmines-dublin-6/6576516"
-  },
-  {
     "id": "6575960",
     "title": "Flat 4, 4 Sallymount Avenue, Ranelagh, Dublin 6",
     "price": "€1,800 per month",
@@ -112,11 +118,5 @@
     "title": "Flat 7, 86 Ranelagh Road, Ranelagh, Dublin 6",
     "price": "€1,450 per month",
     "url": "https://www.daft.ie/for-rent/studio-apartment-flat-7-86-ranelagh-road-ranelagh-dublin-6/6575906"
-  },
-  {
-    "id": "6571991",
-    "title": "Apartment 1, 24 Chelmsford Road, Ranelagh, Dublin 6",
-    "price": "€1,400 per month",
-    "url": "https://www.daft.ie/for-rent/property-apartment-1-24-chelmsford-road-ranelagh-dublin-6/6571991"
   }
 ]
