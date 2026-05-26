@@ -5,7 +5,7 @@
     "dublin-6-dublin",
     "dublin-6w-dublin"
   ],
-  "auto_notify": true,
+  "auto_notify": false,
   "favorites": [],
   "date_range_days": 30
 }
