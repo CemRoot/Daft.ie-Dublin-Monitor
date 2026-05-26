@@ -163,7 +163,7 @@ def trigger_github_scan():
     try:
         res = requests.post(url, headers=headers, json=data)
         if res.status_code == 204:
-            return True, "Tarama GitHub Actions üzerinden başlatıldı! Sonuçlar bulunursa bildirim alacaksınız."
+            return True, "Tarama GitHub Actions üzerinden başlatıldı! Tamamlandığında sonuç bildirimi alacaksınız."
         else:
             return False, f"Tarama başlatılamadı: {res.text}"
     except Exception as e:

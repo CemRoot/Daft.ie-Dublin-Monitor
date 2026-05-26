@@ -1,166 +1,213 @@
-# 🏠 Daft.ie Dublin Monitor
+# Daft.ie Dublin Monitor
 
-Dublin 6/6W bölgesinde €1,500–€1,800 arası studio/daire ilanlarını otomatik takip eden sistem.
+Automated monitoring for rental listings on [Daft.ie](https://www.daft.ie) across Dublin postal districts. The system scans the Daft.ie API on a schedule, sends Telegram alerts for new listings that match your filters, and provides a Telegram bot for configuration and manual scans.
 
-## Mimari
+**Live bot:** [@daftirelandbot](https://t.me/daftirelandbot)  
+**Render service:** `https://daft-ie-dublin-monitor.onrender.com`
+
+---
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  GitHub Actions (her 30 dk — ücretsiz)              │
-│  scanner.py → Daft.ie API v2 → Telegram bildirim    │
-│  seen_ids.json → repo'ya commit (tekrar bildirmez)  │
-└─────────────────────────────────────────────────────┘
-            +
-┌─────────────────────────────────────────────────────┐
-│  Render.com (ücretsiz web service — 7/24)           │
-│  bot.py → Telegram webhook (Render) / polling (local)│
-│  Flask /ping → UptimeRobot her 5 dk ping atar       │
-│  (Render'ın 15 dk uyuma sorununu çözer)             │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  GitHub Actions (every 30 min — free tier)                   │
+│  scanner.py → Daft.ie API v2 → Telegram alerts (new only)    │
+│  seen_ids.json + recent_listings.json → committed to repo    │
+│  Manual scans (workflow_dispatch) → completion summary       │
+└──────────────────────────────────────────────────────────────┘
+                              +
+┌──────────────────────────────────────────────────────────────┐
+│  Render.com (free web service — 24/7)                        │
+│  bot.py → Telegram webhook (production) / polling (local)    │
+│  Flask /ping → UptimeRobot pings every 5 min (prevents sleep)│
+│  Syncs state.json with GitHub; triggers Actions via /scan    │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Dosya Yapısı
+| Component | Role |
+|-----------|------|
+| `scanner.py` | Runs in GitHub Actions; fetches listings, detects new IDs, sends alerts |
+| `bot.py` | Runs on Render; handles Telegram commands, settings, and manual scan triggers |
+| `state.json` | Price range, locations, date filter, favorites, notification toggle |
+| `seen_ids.json` | Listing IDs already notified (prevents duplicate alerts) |
+| `recent_listings.json` | Last scanned listings (used by `/list`) |
+| `locations.py` | Shared Dublin district slugs and Daft geo IDs |
+
+---
+
+## File Structure
 
 ```
 daft-monitor/
-├── bot.py                          # Render'da çalışan Telegram bot
-├── scanner.py                      # GitHub Actions'da çalışan tarayıcı
-├── requirements.txt                # Python bağımlılıkları
-├── render.yaml                     # Render deploy config
-├── state.json                      # Bot ayarları (fiyat, bölge, favoriler)
-├── seen_ids.json                   # Görülen ilan ID'leri
-├── recent_listings.json            # Son taranan ilanlar (/list komutu)
-├── .gitignore
-└── .github/
-    └── workflows/
-        └── scan.yml                # GitHub Actions cron job
+├── bot.py                          # Telegram bot (Render)
+├── scanner.py                      # Listing scanner (GitHub Actions)
+├── locations.py                    # Dublin district geo IDs
+├── requirements.txt
+├── render.yaml
+├── state.json
+├── seen_ids.json
+├── recent_listings.json
+└── .github/workflows/scan.yml
 ```
 
 ---
 
-## KURULUM — ADIM ADIM
+## Setup
 
-### ADIM 1 — Telegram Bot Oluştur
+### Step 1 — Create a Telegram Bot
 
-1. Telegram'da `@BotFather`'a git
-2. `/newbot` yaz
-3. İsim ver: `DaftDublinMonitor`
-4. Kullanıcı adı ver: `daft_dublin_monitor_bot` (benzersiz olmalı)
-5. Verilen **token**'ı kopyala → `7123456789:AAFxxx...`
-6. Bota herhangi bir mesaj at (örn. "merhaba")
-7. Tarayıcıda aç:
+1. Open Telegram and message [@BotFather](https://t.me/BotFather).
+2. Send `/newbot` and follow the prompts.
+3. Copy the **bot token** (e.g. `7123456789:AAFxxx...`).
+4. Send any message to your new bot (e.g. "hello").
+5. Open in a browser:
    `https://api.telegram.org/bot<TOKEN>/getUpdates`
-8. JSON'da `"chat":{"id":` değerini bul → bu senin **Chat ID**'n
+6. Find `"chat":{"id":` in the JSON — that value is your **Chat ID**.
 
 ---
 
-### ADIM 2 — GitHub Repo Oluştur
+### Step 2 — Create the GitHub Repository
 
 ```bash
-# GitHub'da "daft-monitor" adında yeni repo oluştur (public veya private)
-# Sonra:
-git clone https://github.com/<KULLANICI_ADIN>/daft-monitor.git
+git clone https://github.com/<YOUR_USERNAME>/daft-monitor.git
 cd daft-monitor
-
-# Dosyaları kopyala (hepsini bu dizine koy)
-# Klasör yapısına dikkat et: .github/workflows/scan.yml
-
+# Copy all project files into this directory
 git add .
 git commit -m "feat: initial daft monitor setup"
 git push origin main
 ```
 
-> **Not:** `seen_ids.json` mevcut ilan ID'leriyle önceden doldurulmuştur. İlk Actions çalışmasında tüm mevcut ilanlar için spam bildirim gelmez.
+> **Note:** `seen_ids.json` is pre-seeded with existing listing IDs so the first Actions run does not spam you with alerts for listings already on Daft.ie.
 
 ---
 
-### ADIM 3 — GitHub Secrets Ekle
+### Step 3 — Add GitHub Secrets
 
-GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+Go to **Settings → Secrets and variables → Actions → New repository secret**.
 
-| Secret Adı         | Değer                          |
-|--------------------|--------------------------------|
-| `TELEGRAM_TOKEN`   | BotFather'dan aldığın token    |
-| `TELEGRAM_CHAT_ID` | getUpdates'ten aldığın chat ID |
+| Secret | Value |
+|--------|-------|
+| `TELEGRAM_TOKEN` | Bot token from BotFather |
+| `TELEGRAM_CHAT_ID` | Chat ID from `getUpdates` |
 
-GitHub Actions, `seen_ids.json` ve `recent_listings.json` commit'leri için otomatik olarak `GITHUB_TOKEN` sağlar — ayrıca secret eklemen gerekmez.
+Add secrets under **Actions**, not **Dependabot** or **Codespaces**. GitHub Actions automatically provides `GITHUB_TOKEN` for committing `seen_ids.json` and `recent_listings.json` — no extra secret needed for that.
 
 ---
 
-### ADIM 4 — Render Deploy
+### Step 4 — Deploy to Render
 
-1. [render.com](https://render.com) → **New** → **Web Service**
-2. GitHub repo'nu bağla
-3. Ayarlar:
+1. Go to [render.com](https://render.com) → **New → Web Service**.
+2. Connect your GitHub repository.
+3. Configure:
    - **Runtime:** Python 3
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `python bot.py`
-4. **Environment Variables** ekle:
+4. Add environment variables:
 
-| Değişken             | Değer                                              |
-|----------------------|----------------------------------------------------|
-| `TELEGRAM_TOKEN`     | Bot token                                          |
-| `TELEGRAM_CHAT_ID`   | Chat ID                                            |
-| `GITHUB_TOKEN`       | GitHub Personal Access Token (`repo` scope)          |
-| `GITHUB_REPOSITORY`  | `kullanici-adin/daft-monitor` formatında repo adı  |
+| Variable | Value |
+|----------|-------|
+| `TELEGRAM_TOKEN` | Bot token |
+| `TELEGRAM_CHAT_ID` | Chat ID |
+| `GITHUB_TOKEN` | GitHub Personal Access Token (`repo` scope) |
+| `GITHUB_REPOSITORY` | `your-username/daft-monitor` |
 
-> **Webhook:** Render otomatik olarak `RENDER_EXTERNAL_URL` ayarlar; bot bu URL'ye webhook kaydeder ve **polling kullanmaz** (409 Conflict önlenir). İsteğe bağlı: `WEBHOOK_URL` ile override, `WEBHOOK_SECRET` ile `/webhook/<secret>` güvenliği.
+5. Deploy.
 
-5. **Deploy** et
+**Webhook mode:** Render sets `RENDER_EXTERNAL_URL` automatically. The bot registers a webhook to that URL and does **not** use polling in production (avoids Telegram 409 Conflict). Optional: set `WEBHOOK_URL` to override, or `WEBHOOK_SECRET` for a secured `/webhook/<secret>` path.
 
-> **Önemli:** Render deploy edildikten sonra yerelde `python bot.py` çalıştırmayın — aynı token ile iki instance 409 hatasına yol açar. Yerel geliştirme için Render servisini durdurun veya farklı bir test bot token'ı kullanın.
+> **Important:** Do not run `python bot.py` locally while Render is live with the same token — two instances cause a 409 Conflict. Stop the Render service or use a separate test bot for local development.
 
-> Bot, `state.json` ve `recent_listings.json` dosyalarını GitHub ile senkronize eder. `/scan` komutu GitHub Actions workflow'unu tetikler. Bu nedenle Render'da `GITHUB_TOKEN` ve `GITHUB_REPOSITORY` zorunludur.
-
----
-
-### ADIM 5 — UptimeRobot Kur (Render'ı Uyutmama)
-
-1. [uptimerobot.com](https://uptimerobot.com) → ücretsiz hesap aç
-2. **Add New Monitor**:
-   - Monitor Type: **HTTP(s)**
-   - URL: `https://daft-monitor-bot.onrender.com/ping`
-   - Monitoring Interval: **5 minutes**
-3. Kaydet → Render artık uyumaz
+> The bot syncs `state.json` and `recent_listings.json` with GitHub. The `/scan` command triggers the GitHub Actions workflow, so `GITHUB_TOKEN` and `GITHUB_REPOSITORY` are required on Render.
 
 ---
 
-### ADIM 6 — GitHub Actions Test Et
+### Step 5 — UptimeRobot (Keep Render Awake)
 
-1. GitHub → **Actions** sekmesi → `Daft.ie Monitor — Scheduled Scan`
-2. **Run workflow** → **Run workflow** butonuna bas
-3. Log'ları kontrol et — hata yoksa her 30 dk otomatik çalışır
+Render free-tier services sleep after ~15 minutes of inactivity.
 
----
-
-### ADIM 7 — Telegram'dan Test Et
-
-Botuna mesaj gönder:
-
-- `/start` → ana menüyü görmeli
-- `/scan` → manuel tarama başlatmalı
-- `/help` → tüm komutlar
+1. Create a free account at [uptimerobot.com](https://uptimerobot.com).
+2. **Add New Monitor:**
+   - Type: **HTTP(s)**
+   - URL: `https://daft-ie-dublin-monitor.onrender.com/ping`
+   - Interval: **5 minutes**
+3. Save.
 
 ---
 
-## Telegram Komutları
+### Step 6 — Verify GitHub Actions
 
-| Komut          | Açıklama                                    |
-|----------------|---------------------------------------------|
-| `/start`       | Ana menü — inline butonlarla tam kontrol    |
-| `/scan`        | Daft.ie'yi hemen tara, yeni ilanları gönder |
-| `/list`        | Son taranan ilanları listele (max 10)       |
-| `/setprice`    | Fiyat aralığını değiştir                    |
-| `/setlocation` | Takip edilecek bölgeleri seç/kaldır         |
-| `/toggle`      | Otomatik bildirimleri aç/kapat              |
-| `/fav`         | Favori ilanlarımı göster                    |
-| `/help`        | Tüm komutlar                                |
+1. GitHub → **Actions** → `Daft.ie Monitor — Scheduled Scan`
+2. Click **Run workflow → Run workflow**
+3. Check the job logs — on success, the workflow runs automatically every 30 minutes.
+
+Manual runs (`workflow_dispatch`) send a Telegram completion message when no new listings are found. Scheduled cron runs do not send this summary.
 
 ---
 
-## Bildirim Formatı
+### Step 7 — Test via Telegram
 
-Her yeni ilan şu şekilde gelir:
+Message [@daftirelandbot](https://t.me/daftirelandbot) (or your own bot):
+
+- `/start` — main menu with inline buttons
+- `/scan` or **🔍 Hemen Tara** — trigger a manual scan
+- `/help` — list all commands
+
+After a manual scan with no new listings, you should receive:
+
+> ✅ Tarama tamamlandı — 26 ilan kontrol edildi, yeni ilan bulunamadı.
+
+---
+
+## Telegram Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Main menu with inline controls |
+| `/scan` | Run an immediate Daft.ie scan via GitHub Actions |
+| `/list` | Show the last scanned listings (up to 10) |
+| `/setprice` | Set the monthly rent range (e.g. `1500-1800`) |
+| `/setlocation` | Select or deselect Dublin districts to monitor |
+| `/setdate` | Set the listing publish-date filter |
+| `/toggle` | Enable or disable automatic notifications |
+| `/fav` | Show saved favorite listings |
+| `/help` | Show all commands |
+
+Bot UI messages are in Turkish. Configuration is stored in `state.json` and synced to GitHub.
+
+---
+
+## Supported Locations
+
+All 22 Dublin postal districts are available via `/setlocation`:
+
+| District | District | District | District |
+|----------|----------|----------|----------|
+| Dublin 1 | Dublin 2 | Dublin 3 | Dublin 4 |
+| Dublin 5 | Dublin 6 | Dublin 6W | Dublin 7 |
+| Dublin 8 | Dublin 9 | Dublin 10 | Dublin 11 |
+| Dublin 12 | Dublin 13 | Dublin 14 | Dublin 15 |
+| Dublin 16 | Dublin 17 | Dublin 18 | Dublin 20 |
+| Dublin 22 | Dublin 24 | | |
+
+Default: **Dublin 6** and **Dublin 6W**. Geo IDs are defined in `locations.py`.
+
+---
+
+## Filters
+
+| Filter | Default | How to change |
+|--------|---------|---------------|
+| Price range | €1,500 – €1,800 | `/setprice` or edit `state.json` |
+| Locations | Dublin 6, Dublin 6W | `/setlocation` |
+| Publish date | Last 30 days | `/setdate` (1, 7, 14, 30 days, or all) |
+| Notifications | On | `/toggle` |
+
+---
+
+## Notification Format
+
+Each new listing is sent as a Telegram message (photo + caption when available):
 
 ```
 🏠 YENİ İLAN — Dublin 6/6W
@@ -171,61 +218,64 @@ Her yeni ilan şu şekilde gelir:
 🛏 Studio
 📅 Yayın: 25 May 2026, 09:14
 
-🔗 Daft.ie'de Gör   [tıklanabilir link]
+🔗 Daft.ie'de Gör   [clickable link]
 
-[⭐ Favori Ekle/Çıkar]     ← inline buton
+[⭐ Favori Ekle/Çıkar]     ← inline button
 ```
 
-Fotoğraf varsa → fotoğraf + caption olarak gelir.
+---
+
+## Troubleshooting
+
+**Bot does not respond**
+
+- Check Render logs: render.com → your service → **Logs**
+- Verify `TELEGRAM_TOKEN` is correct
+- Visit `/ping` — response should include `mode=webhook` on Render
+- Stop any local `bot.py` process — it conflicts with Render's webhook
+
+**Telegram 409 Conflict**
+
+- Production uses webhook mode; old polling deployments caused this error
+- Only **one** bot instance may run at a time (Render **or** local, not both)
+
+**GitHub Actions not running**
+
+- Confirm the workflow is enabled under **Actions**
+- Verify `TELEGRAM_TOKEN` and `TELEGRAM_CHAT_ID` are set under **Secrets and variables → Actions** (not Agents or Dependabot)
+
+**Manual scan — no completion message**
+
+- Completion summaries are sent only for manual scans (`workflow_dispatch`), not scheduled runs
+- Ensure `auto_notify` is enabled (`/toggle`)
+- Check Actions logs for Telegram send errors
+
+**Same listing notified twice**
+
+- Confirm `seen_ids.json` was committed — check the Actions job log
+
+**Daft API returns 403 or 0 listings**
+
+- The scanner uses Daft.ie v2: `POST https://gateway.daft.ie/api/v2/ads/listings`
+- The legacy `old/v1/listings` endpoint returns 403 (Cloudflare)
+- Required headers: `brand: daft`, `platform: web`
+- Location filtering uses `geoFilter.storedShapeIds` — the old `locations` filter does not work in v2
+- Verify `LOCATION_GEO_IDS` in `locations.py` (Dublin 6 → `70`, Dublin 6W → `71`)
+- Requests use `curl_cffi` with Chrome impersonation
+
+**`/scan` fails or settings do not sync**
+
+- On Render, confirm `GITHUB_TOKEN` (PAT with `repo` scope) and `GITHUB_REPOSITORY` are set
 
 ---
 
-## Sorun Giderme
+## Customization
 
-**Bot yanıt vermiyor:**
+Edit `state.json` for default values, or change settings at runtime via Telegram — changes are saved and committed to GitHub.
 
-- Render loglarını kontrol et → `render.com` → servis → Logs
-- `TELEGRAM_TOKEN` doğru mu?
-- `/ping` yanıtında `mode=webhook` görünmeli (Render'da)
-- Yerelde `bot.py` çalışıyorsa kapatın — Render webhook ile çakışır
+To add a new district:
 
-**Telegram 409 Conflict:**
+1. Add an entry to `LOCATION_OPTIONS` in `locations.py`
+2. Add the matching geo ID to `LOCATION_GEO_IDS`
 
-- Render'da webhook modu kullanılır; eski polling deploy'ları bu hatayı üretirdi
-- Aynı anda yalnızca **bir** bot instance'ı çalışmalı (Render **veya** local, ikisi birden değil)
-
-**GitHub Actions çalışmıyor:**
-
-- Actions sekmesinde workflow enable edildi mi?
-- `TELEGRAM_TOKEN` ve `TELEGRAM_CHAT_ID` secrets doğru eklendi mi?
-
-**Aynı ilan tekrar geliyor:**
-
-- `seen_ids.json` repo'ya commit edilmiş mi? Actions log'una bak.
-
-**Daft API 403 veya 0 ilan hatası:**
-
-- Daft.ie v2 API kullanılıyor: `POST https://gateway.daft.ie/api/v2/ads/listings`
-- Eski `old/v1/listings` endpoint'i artık çalışmıyor (403 Cloudflare).
-- Gerekli header'lar: `brand: daft`, `platform: web`
-- Bölge filtresi v2'de `geoFilter.storedShapeIds` ile yapılır — `locations` filtresi çalışmaz.
-- `scanner.py` içindeki `LOCATION_GEO_IDS` eşleşmelerini kontrol et (Dublin 6 → `70`, Dublin 6W → `71`).
-- İstekler `curl_cffi` ile Chrome impersonation kullanır.
-
-**Bot `/scan` çalışmıyor veya ayarlar senkronize olmuyor:**
-
-- Render'da `GITHUB_TOKEN` (PAT, `repo` scope) ve `GITHUB_REPOSITORY` tanımlı mı?
-
----
-
-## Özelleştirme
-
-`state.json` dosyasını düzenleyerek başlangıç değerlerini değiştirebilirsin.
-Telegram'dan `/setprice` ve `/setlocation` ile çalışma sırasında da değiştirebilirsin — ayarlar `state.json`'a kaydedilir.
-
-Yeni bölge eklemek için:
-
-1. `bot.py` içindeki `LOCATION_OPTIONS` dict'ine yeni satır ekle
-2. `scanner.py` içindeki `LOCATION_GEO_IDS` ve `LOCATION_NAMES` dict'lerine karşılık gelen geo ID'yi ekle
-
-Geo ID'leri bulmak için Daft.ie'nin bölge arama API'sinden veya [daftlistings](https://github.com/AnthonyBloomer/daftlistings) kütüphanesinden yararlanabilirsin.
+Geo IDs can be found via Daft.ie’s location search API or the [daftlistings](https://github.com/AnthonyBloomer/daftlistings) library.

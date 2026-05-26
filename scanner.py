@@ -170,6 +170,21 @@ def send_telegram_notification(listing, ad_id, locations=None):
         except Exception as e2:
             logger.error(f"Failed to send fallback message: {e2}")
 
+def send_scan_summary_message(listings_count, new_count):
+    if not bot or not CHAT_ID:
+        logger.warning("Telegram bot token or chat ID not set.")
+        return
+
+    if new_count == 0:
+        msg = f"✅ Tarama tamamlandı — {listings_count} ilan kontrol edildi, yeni ilan bulunamadı."
+    else:
+        msg = f"✅ Tarama tamamlandı — {listings_count} ilan kontrol edildi, {new_count} yeni ilan bulundu."
+
+    try:
+        bot.send_message(CHAT_ID, msg)
+    except Exception as e:
+        logger.error(f"Error sending scan summary: {e}")
+
 def commit_files_to_github(files_to_commit):
     """files_to_commit is a list of tuples: (filename, message)"""
     if not GITHUB_TOKEN or not REPO:
@@ -239,6 +254,7 @@ def main():
         return
 
     new_listings_found = False
+    new_count = 0
     for item in listings:
         listing = item.get("listing", {})
         ad_id = str(listing.get("id", ""))
@@ -251,6 +267,7 @@ def main():
             send_telegram_notification(listing, ad_id, state.get("locations", []))
             seen_ids.append(ad_id)
             new_listings_found = True
+            new_count += 1
 
     files_to_commit = []
     if new_listings_found:
@@ -265,6 +282,10 @@ def main():
         logger.info(f"Updated and committed {len(files_to_commit)} files to GitHub.")
     else:
         logger.info("No new updates needed.")
+
+    manual_scan = os.environ.get("MANUAL_SCAN") == "true"
+    if manual_scan and state.get("auto_notify", True) and not new_listings_found:
+        send_scan_summary_message(len(listings), new_count)
 
 if __name__ == "__main__":
     main()
