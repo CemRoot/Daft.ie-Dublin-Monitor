@@ -180,30 +180,43 @@ def trigger_github_scan():
 def root():
     return ping()
 
+def _status_info():
+    """Shared status fields for /ping and /health (no Telegram API calls)."""
+    commit = os.environ.get("RENDER_GIT_COMMIT", "local")
+    branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
+    mode = "webhook" if _webhook_mode else "polling"
+    return {
+        "status": "ok",
+        "bot": _bot_username_cache or "unknown",
+        "mode": mode,
+        "branch": branch,
+        "commit": commit[:7],
+        "locations": len(LOCATION_OPTIONS),
+        "date_filter": True,
+    }
+
 @app.route('/ping')
 def ping():
     """Fast keep-alive endpoint for UptimeRobot (no Telegram API calls)."""
-    commit = os.environ.get("RENDER_GIT_COMMIT", "local")
-    branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
-    locations_count = len(LOCATION_OPTIONS)
-    mode = "webhook" if _webhook_mode else "polling"
-    bot_user = _bot_username_cache or "unknown"
+    info = _status_info()
     return (
-        f"Pong | bot={bot_user} | mode={mode} | {branch}@{commit[:7]} | "
-        f"locations={locations_count} | date_filter=True"
+        f"Pong | bot={info['bot']} | mode={info['mode']} | "
+        f"{info['branch']}@{info['commit']} | locations={info['locations']} | date_filter=True"
     ), 200
 
 @app.route('/health')
 def health():
+    """Health check for Render and UptimeRobot (same data as /ping, JSON)."""
+    return jsonify(_status_info()), 200
+
+@app.route('/status')
+def status():
     """Diagnostics: last webhook update and Telegram webhook errors."""
     ensure_production_startup()
     last_at = _last_update_at
     last_ago = round(time.time() - last_at, 1) if last_at else None
     return jsonify({
-        "status": "ok",
-        "mode": "webhook" if _webhook_mode else "polling",
-        "bot": _bot_username_cache,
-        "commit": os.environ.get("RENDER_GIT_COMMIT", "local")[:7],
+        **_status_info(),
         "last_update_at": datetime.fromtimestamp(last_at, tz=timezone.utc).isoformat() if last_at else None,
         "last_update_ago_sec": last_ago,
         "webhook_url": get_webhook_url() if _webhook_mode else None,

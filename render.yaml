@@ -5,7 +5,7 @@ services:
     branch: daft-monitor-setup-2684401370211648289
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app"
-    healthCheckPath: /ping
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0

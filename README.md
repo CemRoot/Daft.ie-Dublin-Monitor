@@ -232,7 +232,7 @@ Each new listing is sent as a Telegram message (photo + caption when available):
 - **Cold start:** After ~15 min idle, the service sleeps. The first message after wake can take **30–50 seconds** — wait and send `/start` again if needed.
 - **UptimeRobot:** Monitor must ping `https://daft-ie-dublin-monitor.onrender.com/ping` every **5 minutes** (not the root URL). Wrong URL or interval >15 min lets the service sleep.
 - Check Render logs: render.com → your service → **Logs** — look for `Webhook received` and `Webhook registered`.
-- Visit `/ping` (fast) or `/health` (last update time + webhook errors) — should show `mode=webhook` on Render.
+- Visit `/ping` or `/health` (fast) or `/status` (last update time + webhook errors) — should show `mode=webhook` on Render.
 - Verify `TELEGRAM_TOKEN` is correct.
 - Stop any local `bot.py` process — it conflicts with Render's webhook.
 
