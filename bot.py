@@ -1,11 +1,13 @@
 import os
 import json
 import logging
+import signal
+import sys
 import threading
-from flask import Flask
+from flask import Flask, request
 import telebot
 from telebot.apihelper import ApiTelegramException
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand, Update
 import requests
 import base64
 
@@ -43,9 +45,11 @@ TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") # Needs to be added to Render/Actions
 REPO = os.environ.get("GITHUB_REPOSITORY") # Format: user/repo
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
+_webhook_mode = False
 
 def download_from_github(filename):
     if not GITHUB_TOKEN or not REPO:
@@ -174,6 +178,7 @@ def ping():
     commit = os.environ.get("RENDER_GIT_COMMIT", "local")
     branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
     locations_count = len(LOCATION_OPTIONS)
+    mode = "webhook" if _webhook_mode else "polling"
     bot_user = "unknown"
     if TOKEN:
         try:
@@ -181,9 +186,28 @@ def ping():
         except Exception as e:
             logger.warning("Could not fetch bot username for /ping: %s", e)
     return (
-        f"Pong | bot={bot_user} | {branch}@{commit[:7]} | "
+        f"Pong | bot={bot_user} | mode={mode} | {branch}@{commit[:7]} | "
         f"locations={locations_count} | date_filter=True"
     ), 200
+
+def _process_webhook_update():
+    if request.content_type != "application/json":
+        return "", 400
+    try:
+        payload = json.loads(request.get_data(as_text=True))
+        update = Update.de_json(payload)
+        bot.process_new_updates([update])
+    except Exception as e:
+        logger.exception("Webhook update processing failed: %s", e)
+        return "", 500
+    return "", 200
+
+@app.route("/webhook", methods=["POST"])
+@app.route("/webhook/<secret>", methods=["POST"])
+def webhook_handler(secret=None):
+    if WEBHOOK_SECRET and secret != WEBHOOK_SECRET:
+        return "", 403
+    return _process_webhook_update()
 
 def get_main_menu_markup():
     markup = InlineKeyboardMarkup()
@@ -453,26 +477,68 @@ def setup_bot_commands():
         BotCommand("help", "Yardım"),
     ])
 
+def get_webhook_base_url():
+    return os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL")
+
+def get_webhook_url():
+    base = get_webhook_base_url()
+    if not base:
+        return None
+    base = base.rstrip("/")
+    if WEBHOOK_SECRET:
+        return f"{base}/webhook/{WEBHOOK_SECRET}"
+    return f"{base}/webhook"
+
+def use_webhook_mode():
+    return bool(get_webhook_base_url())
+
+def setup_webhook():
+    url = get_webhook_url()
+    if not url:
+        return False
+    bot.delete_webhook(drop_pending_updates=False)
+    bot.set_webhook(
+        url=url,
+        drop_pending_updates=False,
+        allowed_updates=["message", "callback_query"],
+    )
+    info = bot.get_webhook_info()
+    logger.info("Webhook registered: %s (pending=%s)", url, info.pending_update_count)
+    return True
+
+def teardown_webhook():
+    if not _webhook_mode:
+        return
+    try:
+        bot.delete_webhook(drop_pending_updates=False)
+        logger.info("Webhook removed on shutdown")
+    except Exception as e:
+        logger.warning("Failed to remove webhook on shutdown: %s", e)
+
+def _shutdown_handler(signum, _frame):
+    logger.info("Received signal %s, shutting down...", signum)
+    teardown_webhook()
+    sys.exit(0)
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, threaded=True)
 
 class PollingExceptionHandler(telebot.ExceptionHandler):
     def handle(self, exception):
         if isinstance(exception, ApiTelegramException) and exception.error_code == 409:
-            logger.warning(
-                "Telegram 409 Conflict: another getUpdates client is active "
-                "(local bot.py, overlapping Render deploy, or getUpdates test). "
-                "Ensure only one bot instance is running; retrying..."
+            logger.error(
+                "Telegram 409 Conflict: another getUpdates client is active. "
+                "Stop local bot.py when Render is running, or use webhook mode on Render."
             )
-            return True
+            return False
         logger.exception("Unhandled bot exception during polling: %s", exception)
         return False
 
 def start_bot_polling():
     me = bot.get_me()
     logger.info("Bot identity: @%s (id=%s)", me.username, me.id)
-    logger.info("Clearing webhook before polling (keeping pending updates)...")
+    logger.info("Local dev mode: clearing webhook before polling...")
     bot.delete_webhook(drop_pending_updates=False)
     bot.exception_handler = PollingExceptionHandler()
     logger.info(
@@ -492,12 +558,19 @@ if __name__ == "__main__":
     if not TOKEN:
         logger.error("TELEGRAM_TOKEN is not set.")
     else:
-        logger.info("Starting bot and Flask server...")
+        _webhook_mode = use_webhook_mode()
         sync_state_from_github()
         setup_bot_commands()
 
-        flask_thread = threading.Thread(target=run_flask)
-        flask_thread.daemon = True
-        flask_thread.start()
+        signal.signal(signal.SIGTERM, _shutdown_handler)
+        signal.signal(signal.SIGINT, _shutdown_handler)
 
-        start_bot_polling()
+        if _webhook_mode:
+            logger.info("Render/production mode: webhook (no polling)")
+            setup_webhook()
+            run_flask()
+        else:
+            logger.info("Local dev mode: Flask + polling (set WEBHOOK_URL to test webhook locally)")
+            flask_thread = threading.Thread(target=run_flask, daemon=True)
+            flask_thread.start()
+            start_bot_polling()

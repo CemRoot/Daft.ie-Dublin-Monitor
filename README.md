@@ -13,7 +13,7 @@ Dublin 6/6W bölgesinde €1,500–€1,800 arası studio/daire ilanlarını oto
             +
 ┌─────────────────────────────────────────────────────┐
 │  Render.com (ücretsiz web service — 7/24)           │
-│  bot.py → Telegram polling                          │
+│  bot.py → Telegram webhook (Render) / polling (local)│
 │  Flask /ping → UptimeRobot her 5 dk ping atar       │
 │  (Render'ın 15 dk uyuma sorununu çözer)             │
 └─────────────────────────────────────────────────────┘
@@ -104,7 +104,11 @@ GitHub Actions, `seen_ids.json` ve `recent_listings.json` commit'leri için otom
 | `GITHUB_TOKEN`       | GitHub Personal Access Token (`repo` scope)          |
 | `GITHUB_REPOSITORY`  | `kullanici-adin/daft-monitor` formatında repo adı  |
 
+> **Webhook:** Render otomatik olarak `RENDER_EXTERNAL_URL` ayarlar; bot bu URL'ye webhook kaydeder ve **polling kullanmaz** (409 Conflict önlenir). İsteğe bağlı: `WEBHOOK_URL` ile override, `WEBHOOK_SECRET` ile `/webhook/<secret>` güvenliği.
+
 5. **Deploy** et
+
+> **Önemli:** Render deploy edildikten sonra yerelde `python bot.py` çalıştırmayın — aynı token ile iki instance 409 hatasına yol açar. Yerel geliştirme için Render servisini durdurun veya farklı bir test bot token'ı kullanın.
 
 > Bot, `state.json` ve `recent_listings.json` dosyalarını GitHub ile senkronize eder. `/scan` komutu GitHub Actions workflow'unu tetikler. Bu nedenle Render'da `GITHUB_TOKEN` ve `GITHUB_REPOSITORY` zorunludur.
 
@@ -182,6 +186,13 @@ Fotoğraf varsa → fotoğraf + caption olarak gelir.
 
 - Render loglarını kontrol et → `render.com` → servis → Logs
 - `TELEGRAM_TOKEN` doğru mu?
+- `/ping` yanıtında `mode=webhook` görünmeli (Render'da)
+- Yerelde `bot.py` çalışıyorsa kapatın — Render webhook ile çakışır
+
+**Telegram 409 Conflict:**
+
+- Render'da webhook modu kullanılır; eski polling deploy'ları bu hatayı üretirdi
+- Aynı anda yalnızca **bir** bot instance'ı çalışmalı (Render **veya** local, ikisi birden değil)
 
 **GitHub Actions çalışmıyor:**
 

@@ -9,6 +9,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
+      # RENDER_EXTERNAL_URL is set automatically by Render for web services.
+      # Optional overrides: WEBHOOK_URL, WEBHOOK_SECRET
       - key: TELEGRAM_TOKEN
         sync: false
       - key: TELEGRAM_CHAT_ID
