@@ -20,7 +20,7 @@ Automated monitoring for rental listings on [Daft.ie](https://www.daft.ie) acros
 ┌──────────────────────────────────────────────────────────────┐
 │  Render.com (free web service — 24/7)                        │
 │  bot.py → Telegram webhook (production) / polling (local)    │
-│  Flask /ping → UptimeRobot pings every 5 min (prevents sleep)│
+│  gunicorn + Flask /ping → UptimeRobot every 5 min (no sleep) │
 │  Syncs state.json with GitHub; triggers Actions via /scan    │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -102,7 +102,7 @@ Add secrets under **Actions**, not **Dependabot** or **Codespaces**. GitHub Acti
 3. Configure:
    - **Runtime:** Python 3
    - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `python bot.py`
+   - **Start Command:** `gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 bot:app`
 4. Add environment variables:
 
 | Variable | Value |
@@ -227,12 +227,19 @@ Each new listing is sent as a Telegram message (photo + caption when available):
 
 ## Troubleshooting
 
-**Bot does not respond**
+**Bot does not respond (intermittent on Render free tier)**
 
-- Check Render logs: render.com → your service → **Logs**
-- Verify `TELEGRAM_TOKEN` is correct
-- Visit `/ping` — response should include `mode=webhook` on Render
-- Stop any local `bot.py` process — it conflicts with Render's webhook
+- **Cold start:** After ~15 min idle, the service sleeps. The first message after wake can take **30–50 seconds** — wait and send `/start` again if needed.
+- **UptimeRobot:** Monitor must ping `https://daft-ie-dublin-monitor.onrender.com/ping` every **5 minutes** (not the root URL). Wrong URL or interval >15 min lets the service sleep.
+- Check Render logs: render.com → your service → **Logs** — look for `Webhook received` and `Webhook registered`.
+- Visit `/ping` (fast) or `/health` (last update time + webhook errors) — should show `mode=webhook` on Render.
+- Verify `TELEGRAM_TOKEN` is correct.
+- Stop any local `bot.py` process — it conflicts with Render's webhook.
+
+**Bot responds slowly after idle**
+
+- Expected on Render **free** tier: cold start + webhook processing. UptimeRobot reduces sleep but does not remove the first-request delay after wake.
+- Upgrade to a paid Render plan for always-on (no spin-down).
 
 **Telegram 409 Conflict**
 

@@ -4,7 +4,9 @@ import logging
 import signal
 import sys
 import threading
-from flask import Flask, request
+import time
+from datetime import datetime, timezone
+from flask import Flask, request, jsonify
 import telebot
 from telebot.apihelper import ApiTelegramException
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand, Update
@@ -50,6 +52,11 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 _webhook_mode = False
+_startup_lock = threading.Lock()
+_startup_done = False
+_bot_username_cache = None
+_last_update_at = None
+_webhook_info_cache = {}
 
 def download_from_github(filename):
     if not GITHUB_TOKEN or not REPO:
@@ -175,39 +182,69 @@ def root():
 
 @app.route('/ping')
 def ping():
+    """Fast keep-alive endpoint for UptimeRobot (no Telegram API calls)."""
     commit = os.environ.get("RENDER_GIT_COMMIT", "local")
     branch = os.environ.get("RENDER_GIT_BRANCH", "unknown")
     locations_count = len(LOCATION_OPTIONS)
     mode = "webhook" if _webhook_mode else "polling"
-    bot_user = "unknown"
-    if TOKEN:
-        try:
-            bot_user = f"@{bot.get_me().username}"
-        except Exception as e:
-            logger.warning("Could not fetch bot username for /ping: %s", e)
+    bot_user = _bot_username_cache or "unknown"
     return (
         f"Pong | bot={bot_user} | mode={mode} | {branch}@{commit[:7]} | "
         f"locations={locations_count} | date_filter=True"
     ), 200
 
-def _process_webhook_update():
-    if request.content_type != "application/json":
-        return "", 400
+@app.route('/health')
+def health():
+    """Diagnostics: last webhook update and Telegram webhook errors."""
+    ensure_production_startup()
+    last_at = _last_update_at
+    last_ago = round(time.time() - last_at, 1) if last_at else None
+    return jsonify({
+        "status": "ok",
+        "mode": "webhook" if _webhook_mode else "polling",
+        "bot": _bot_username_cache,
+        "commit": os.environ.get("RENDER_GIT_COMMIT", "local")[:7],
+        "last_update_at": datetime.fromtimestamp(last_at, tz=timezone.utc).isoformat() if last_at else None,
+        "last_update_ago_sec": last_ago,
+        "webhook_url": get_webhook_url() if _webhook_mode else None,
+        "webhook_info": _webhook_info_cache,
+    }), 200
+
+def _process_update_async(payload_bytes):
+    global _last_update_at
     try:
-        payload = json.loads(request.get_data(as_text=True))
+        payload = json.loads(payload_bytes)
+        update_id = payload.get("update_id")
+        logger.info("Processing webhook update_id=%s", update_id)
         update = Update.de_json(payload)
         bot.process_new_updates([update])
+        _last_update_at = time.time()
+        logger.info("Finished webhook update_id=%s", update_id)
     except Exception as e:
         logger.exception("Webhook update processing failed: %s", e)
-        return "", 500
-    return "", 200
 
 @app.route("/webhook", methods=["POST"])
 @app.route("/webhook/<secret>", methods=["POST"])
 def webhook_handler(secret=None):
     if WEBHOOK_SECRET and secret != WEBHOOK_SECRET:
         return "", 403
-    return _process_webhook_update()
+    ensure_production_startup()
+    if request.content_type != "application/json":
+        return "", 400
+    payload_bytes = request.get_data()
+    if not payload_bytes:
+        return "", 400
+    try:
+        update_id = json.loads(payload_bytes).get("update_id")
+    except json.JSONDecodeError:
+        return "", 400
+    logger.info("Webhook received update_id=%s", update_id)
+    threading.Thread(
+        target=_process_update_async,
+        args=(payload_bytes,),
+        daemon=True,
+    ).start()
+    return "", 200
 
 def get_main_menu_markup():
     markup = InlineKeyboardMarkup()
@@ -492,6 +529,37 @@ def get_webhook_url():
 def use_webhook_mode():
     return bool(get_webhook_base_url())
 
+def _cache_bot_identity():
+    global _bot_username_cache
+    try:
+        me = bot.get_me()
+        _bot_username_cache = f"@{me.username}"
+        logger.info("Bot identity: %s (id=%s)", _bot_username_cache, me.id)
+    except Exception as e:
+        logger.warning("Could not fetch bot identity: %s", e)
+
+def _log_webhook_info(info, url):
+    global _webhook_info_cache
+    _webhook_info_cache = {
+        "url": info.url,
+        "pending_update_count": info.pending_update_count,
+        "last_error_date": info.last_error_date,
+        "last_error_message": info.last_error_message,
+        "max_connections": info.max_connections,
+    }
+    logger.info(
+        "Webhook registered: %s (pending=%s, last_error=%s)",
+        url,
+        info.pending_update_count,
+        info.last_error_message or "none",
+    )
+    if info.last_error_date:
+        logger.warning(
+            "Telegram webhook last error (date=%s): %s",
+            info.last_error_date,
+            info.last_error_message,
+        )
+
 def setup_webhook():
     url = get_webhook_url()
     if not url:
@@ -503,8 +571,41 @@ def setup_webhook():
         allowed_updates=["message", "callback_query"],
     )
     info = bot.get_webhook_info()
-    logger.info("Webhook registered: %s (pending=%s)", url, info.pending_update_count)
+    _log_webhook_info(info, url)
     return True
+
+def setup_webhook_with_retry(max_attempts=5, delay_sec=2):
+    for attempt in range(1, max_attempts + 1):
+        try:
+            if setup_webhook():
+                return True
+        except Exception as e:
+            logger.warning("Webhook setup attempt %d/%d failed: %s", attempt, max_attempts, e)
+        if attempt < max_attempts:
+            time.sleep(delay_sec)
+    logger.error("Webhook setup failed after %d attempts", max_attempts)
+    return False
+
+def ensure_production_startup():
+    global _webhook_mode, _startup_done
+    if _startup_done or not TOKEN:
+        return
+    with _startup_lock:
+        if _startup_done:
+            return
+        _webhook_mode = use_webhook_mode()
+        if _webhook_mode:
+            logger.info("Production startup: webhook mode")
+            threading.Thread(target=sync_state_from_github, daemon=True).start()
+            setup_webhook_with_retry()
+            setup_bot_commands()
+            _cache_bot_identity()
+        _startup_done = True
+
+@app.before_request
+def _ensure_startup_before_request():
+    if use_webhook_mode() and TOKEN:
+        ensure_production_startup()
 
 def teardown_webhook():
     if not _webhook_mode:
@@ -536,8 +637,7 @@ class PollingExceptionHandler(telebot.ExceptionHandler):
         return False
 
 def start_bot_polling():
-    me = bot.get_me()
-    logger.info("Bot identity: @%s (id=%s)", me.username, me.id)
+    _cache_bot_identity()
     logger.info("Local dev mode: clearing webhook before polling...")
     bot.delete_webhook(drop_pending_updates=False)
     bot.exception_handler = PollingExceptionHandler()
@@ -558,19 +658,18 @@ if __name__ == "__main__":
     if not TOKEN:
         logger.error("TELEGRAM_TOKEN is not set.")
     else:
-        _webhook_mode = use_webhook_mode()
-        sync_state_from_github()
-        setup_bot_commands()
-
         signal.signal(signal.SIGTERM, _shutdown_handler)
         signal.signal(signal.SIGINT, _shutdown_handler)
 
-        if _webhook_mode:
-            logger.info("Render/production mode: webhook (no polling)")
-            setup_webhook()
+        if use_webhook_mode():
+            logger.info("Render/production mode: webhook (use gunicorn on Render)")
+            ensure_production_startup()
             run_flask()
         else:
             logger.info("Local dev mode: Flask + polling (set WEBHOOK_URL to test webhook locally)")
+            sync_state_from_github()
+            setup_bot_commands()
+            _cache_bot_identity()
             flask_thread = threading.Thread(target=run_flask, daemon=True)
             flask_thread.start()
             start_bot_polling()
