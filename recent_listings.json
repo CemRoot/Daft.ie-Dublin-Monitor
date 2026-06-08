@@ -1,5 +1,17 @@
 [
   {
+    "id": "6591643",
+    "title": "8 Rathmines Road Lower, Ranelagh, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/flat-8-rathmines-road-lower-ranelagh-dublin-6/6591643"
+  },
+  {
+    "id": "6591493",
+    "title": "Terenure Road East, Rathgar, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/property-terenure-road-east-rathgar-dublin-6/6591493"
+  },
+  {
     "id": "6590882",
     "title": "Flat 1, 7 Grove Park, Rathmines, Dublin 6",
     "price": "€1,450 per month",
@@ -34,11 +46,5 @@
     "title": "Mount Alton, Harold's Cross, Dublin 6w",
     "price": "€1,400 per month",
     "url": "https://www.daft.ie/for-rent/studio-apartment-mount-alton-harolds-cross-dublin-6w/6581313"
-  },
-  {
-    "id": "6580098",
-    "title": "Apartment, 11-13 Sundrive Road, Kimmage, Dublin 12",
-    "price": "€1,500 per month",
-    "url": "https://www.daft.ie/for-rent/flat-apartment-11-13-sundrive-road-kimmage-dublin-12/6580098"
   }
 ]
