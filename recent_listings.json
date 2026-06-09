@@ -1,5 +1,17 @@
 [
   {
+    "id": "6589272",
+    "title": "Grove Park, Rathmines, Dublin, Rathmines, Dublin 6",
+    "price": "€1,500 per month",
+    "url": "https://www.daft.ie/for-rent/grove-park-rathmines-dublin-rathmines-dublin-6/6589272"
+  },
+  {
+    "id": "6592040",
+    "title": "Flat 1, 21 Grove Park, Rathmines, Dublin 6",
+    "price": "€1,470 per month",
+    "url": "https://www.daft.ie/for-rent/flat-1-21-grove-park-rathmines-dublin-6/6592040"
+  },
+  {
     "id": "6591643",
     "title": "8 Rathmines Road Lower, Ranelagh, Dublin 6",
     "price": "€1,450 per month",
@@ -9,25 +21,25 @@
     "id": "6591493",
     "title": "Terenure Road East, Rathgar, Dublin 6",
     "price": "€1,450 per month",
-    "url": "https://www.daft.ie/for-rent/property-terenure-road-east-rathgar-dublin-6/6591493"
+    "url": "https://www.daft.ie/for-rent/terenure-road-east-rathgar-dublin-6/6591493"
   },
   {
     "id": "6590882",
     "title": "Flat 1, 7 Grove Park, Rathmines, Dublin 6",
-    "price": "€1,450 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-flat-1-7-grove-park-rathmines-dublin-6/6590882"
+    "price": "€13 per month",
+    "url": "https://www.daft.ie/for-rent/flat-1-7-grove-park-rathmines-dublin-6/6590882"
   },
   {
     "id": "6587099",
     "title": "Fortfield Road, Terenure, Dublin 6w",
     "price": "€300 per week",
-    "url": "https://www.daft.ie/for-rent/property-fortfield-road-terenure-dublin-6w/6587099"
+    "url": "https://www.daft.ie/for-rent/fortfield-road-terenure-dublin-6w/6587099"
   },
   {
     "id": "6585762",
     "title": "44 Merton Drive Ranelagh, Ranelagh, Dublin 6",
     "price": "€1,300 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-44-merton-drive-ranelagh-ranelagh-dublin-6/6585762"
+    "url": "https://www.daft.ie/for-rent/44-merton-drive-ranelagh-ranelagh-dublin-6/6585762"
   },
   {
     "id": "6584127",
@@ -39,6 +51,6 @@
     "id": "6581313",
     "title": "Mount Alton, Harold's Cross, Dublin 6w",
     "price": "€1,400 per month",
-    "url": "https://www.daft.ie/for-rent/studio-apartment-mount-alton-harolds-cross-dublin-6w/6581313"
+    "url": "https://www.daft.ie/for-rent/mount-alton-harolds-cross-dublin-6w/6581313"
   }
 ]
