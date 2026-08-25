@@ -24,12 +24,6 @@
     "url": "https://www.daft.ie/for-rent/apartment-6-178-182-rathmines-road-lower-rathmines-dublin-6/6648906"
   },
   {
-    "id": "6648064",
-    "title": "Apartment 4, 25 Richmond Hill, Rathmines, Dublin 6",
-    "price": "€1,400 per month",
-    "url": "https://www.daft.ie/for-rent/apartment-4-25-richmond-hill-rathmines-dublin-6/6648064"
-  },
-  {
     "id": "6575375",
     "title": "Upper Rathmines Road, Rathmines, Co. Dublin",
     "price": "€1,450 per month",
@@ -40,11 +34,5 @@
     "title": "Belgrave Road, Rathmines, Dublin 6",
     "price": "€1,250 per month",
     "url": "https://www.daft.ie/for-rent/belgrave-road-rathmines-dublin-6/6645462"
-  },
-  {
-    "id": "6644339",
-    "title": "Flat 1, 46 Rathmines Road Upper, Rathmines, Dublin 6",
-    "price": "€1,450 per month",
-    "url": "https://www.daft.ie/for-rent/flat-1-46-rathmines-road-upper-rathmines-dublin-6/6644339"
   }
 ]
