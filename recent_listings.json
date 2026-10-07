@@ -1,5 +1,23 @@
 [
   {
+    "id": "6691210",
+    "title": "Flat 7, 23 York Road, Rathmines, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/flat-7-23-york-road-rathmines-dublin-6/6691210"
+  },
+  {
+    "id": "6690743",
+    "title": "Flat 1 , 56 Kenilworth Park, Harold's Cross, Dublin 6w",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/flat-1-56-kenilworth-park-harolds-cross-dublin-6w/6690743"
+  },
+  {
+    "id": "6690673",
+    "title": "Harold'S Cross Road, Dublin 6, Dublin 6w",
+    "price": "€1,395 per month",
+    "url": "https://www.daft.ie/for-rent/harolds-cross-road-dublin-6-dublin-6w/6690673"
+  },
+  {
     "id": "6688496",
     "title": "Edenvale Road, Ranelagh, Dublin 6",
     "price": "€1,500 per month",
@@ -46,11 +64,5 @@
     "title": "Flat 1, 135 Harold's Cross Rd, Harold's Cross, Dublin 6w",
     "price": "€1,325 per month",
     "url": "https://www.daft.ie/for-rent/flat-1-135-harolds-cross-rd-harolds-cross-dublin-6w/6681509"
-  },
-  {
-    "id": "6678473",
-    "title": "Flat 7, 14 Grosvenor Road, Rathgar, Dublin 6",
-    "price": "€1,500 per month",
-    "url": "https://www.daft.ie/for-rent/flat-7-14-grosvenor-road-rathgar-dublin-6/6678473"
   }
 ]
