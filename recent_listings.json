@@ -1,5 +1,17 @@
 [
   {
+    "id": "6694352",
+    "title": "Grove Park, Rathmines, Dublin 6",
+    "price": "€1,500 per month",
+    "url": "https://www.daft.ie/for-rent/grove-park-rathmines-dublin-6/6694352"
+  },
+  {
+    "id": "6694344",
+    "title": "Grove Park, Rathmines, Dublin 6",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/grove-park-rathmines-dublin-6/6694344"
+  },
+  {
     "id": "6691210",
     "title": "Flat 7, 23 York Road, Rathmines, Dublin 6",
     "price": "€1,450 per month",
@@ -36,21 +48,9 @@
     "url": "https://www.daft.ie/for-rent/leinster-road-rathmines-dublin-6/6683606"
   },
   {
-    "id": "6682870",
-    "title": "Grove Park, Rathmines, Dublin 6",
-    "price": "€1,450 per month",
-    "url": "https://www.daft.ie/for-rent/grove-park-rathmines-dublin-6/6682870"
-  },
-  {
     "id": "6681886",
     "title": "Apartment  4, 59 Rathgar Avenue, Rathgar, Rathgar, Dublin 6",
     "price": "€1,175 per month",
     "url": "https://www.daft.ie/for-rent/apartment-4-59-rathgar-avenue-rathgar-rathgar-dublin-6/6681886"
-  },
-  {
-    "id": "6681509",
-    "title": "Flat 1, 135 Harold's Cross Rd, Harold's Cross, Dublin 6w",
-    "price": "€1,325 per month",
-    "url": "https://www.daft.ie/for-rent/flat-1-135-harolds-cross-rd-harolds-cross-dublin-6w/6681509"
   }
 ]
