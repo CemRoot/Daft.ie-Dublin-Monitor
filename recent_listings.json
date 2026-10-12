@@ -1,5 +1,17 @@
 [
   {
+    "id": "6694948",
+    "title": "Apartment 5 , 37 Chelmsford Road, Ranelagh, Dublin 6",
+    "price": "€1,500 per month",
+    "url": "https://www.daft.ie/for-rent/apartment-5-37-chelmsford-road-ranelagh-dublin-6/6694948"
+  },
+  {
+    "id": "6694614",
+    "title": "Belgrave Terrace, Ranelagh, Dublin 6",
+    "price": "€1,500 per month",
+    "url": "https://www.daft.ie/for-rent/belgrave-terrace-ranelagh-dublin-6/6694614"
+  },
+  {
     "id": "6694352",
     "title": "Grove Park, Rathmines, Dublin 6",
     "price": "€1,500 per month",
@@ -32,7 +44,7 @@
   {
     "id": "6688496",
     "title": "Edenvale Road, Ranelagh, Dublin 6",
-    "price": "€1,500 per month",
+    "price": "€1,400 per month",
     "url": "https://www.daft.ie/for-rent/edenvale-road-ranelagh-dublin-6/6688496"
   },
   {
@@ -46,11 +58,5 @@
     "title": "Leinster Road, Rathmines, Dublin 6",
     "price": "€895 per month",
     "url": "https://www.daft.ie/for-rent/leinster-road-rathmines-dublin-6/6683606"
-  },
-  {
-    "id": "6681886",
-    "title": "Apartment  4, 59 Rathgar Avenue, Rathgar, Rathgar, Dublin 6",
-    "price": "€1,175 per month",
-    "url": "https://www.daft.ie/for-rent/apartment-4-59-rathgar-avenue-rathgar-rathgar-dublin-6/6681886"
   }
 ]
