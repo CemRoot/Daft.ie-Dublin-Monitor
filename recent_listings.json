@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": "6712805",
+    "title": "2, 24 Chelmsford Road, Dublin 6, Ranelagh, Dublin 6",
+    "price": "€1,450 per month",
+    "url": "https://www.daft.ie/for-rent/2-24-chelmsford-road-dublin-6-ranelagh-dublin-6/6712805"
+  },
+  {
+    "id": "6712604",
+    "title": "Flat 5, 68 Rathgar Road, Rathgar, Dublin 6",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/flat-5-68-rathgar-road-rathgar-dublin-6/6712604"
+  },
+  {
+    "id": "6712575",
+    "title": "23/25 Rathmines Road Lower, Dublin 6, Rathmines, Dublin 6",
+    "price": "€1,350 per month",
+    "url": "https://www.daft.ie/for-rent/23-25-rathmines-road-lower-dublin-6-rathmines-dublin-6/6712575"
+  },
+  {
+    "id": "6710109",
+    "title": "Orwell Road, Templeogue, Dublin 6w",
+    "price": "€320 per week",
+    "url": "https://www.daft.ie/for-rent/orwell-road-templeogue-dublin-6w/6710109"
+  },
+  {
+    "id": "6709173",
+    "title": "Mount Alton, Mount Tallant, Harold's Cross, Dublin 6w",
+    "price": "€1,300 per month",
+    "url": "https://www.daft.ie/for-rent/mount-alton-mount-tallant-harolds-cross-dublin-6w/6709173"
+  },
+  {
+    "id": "6709035",
+    "title": "10 Mount Argus Square, Mount Argus Way, Harold's Cross, Dublin 6w",
+    "price": "€1,350 per month",
+    "url": "https://www.daft.ie/for-rent/10-mount-argus-square-mount-argus-way-harolds-cross-dublin-6w/6709035"
+  },
+  {
+    "id": "6707418",
+    "title": "Moyne Road, Ranelagh, Dublin 6",
+    "price": "€1,350 per month",
+    "url": "https://www.daft.ie/for-rent/moyne-road-ranelagh-dublin-6/6707418"
+  },
+  {
+    "id": "6703339",
+    "title": "Moyne Road, Ranelagh, Dublin 6",
+    "price": "€1,500 per month",
+    "url": "https://www.daft.ie/for-rent/moyne-road-ranelagh-dublin-6/6703339"
+  }
+]
