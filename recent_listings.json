@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "6719485",
+    "title": "Highfield Road, Dublin 6, Rathmines, Dublin 6",
+    "price": "€1,490 per month",
+    "url": "https://www.daft.ie/for-rent/highfield-road-dublin-6-rathmines-dublin-6/6719485"
+  },
+  {
+    "id": "6729192",
+    "title": "Grove Park, Rathmines, Co. Dublin",
+    "price": "€1,200 per month",
+    "url": "https://www.daft.ie/for-rent/grove-park-rathmines-co-dublin/6729192"
+  },
+  {
+    "id": "6725940",
+    "title": "Rathmines Road Upper, Dartry, Dublin 6",
+    "price": "€1,400 per month",
+    "url": "https://www.daft.ie/for-rent/rathmines-road-upper-dartry-dublin-6/6725940"
+  }
+]
